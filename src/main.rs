@@ -8,22 +8,23 @@ mod collapse;
 mod iter;
 mod sudoku;
 
-use collapse::Collapse;
+use collapse::{Collapse, FromCollapse};
 use iter::AccumulateFilter;
-use std::rc::Rc;
-use sudoku::Solver;
+use sudoku::{Solver, Sudoku};
 
 fn main() {
-    let mut s = Solver::new();
-    let a = s.solve();
-    let mut b = [[0; 9]; 9];
-    a.unwrap()
-        .into_iter()
-        .for_each(|(coord, i)| b[coord.0][coord.1] = i);
-    for i in 0..9 {
-        for j in 0..9 {
-            print!("{} ", b[i][j]);
-        }
-        println!();
-    }
+    let mut solver = Solver::new();
+    let initial = solver.get_state([
+        [0, 0, 0, 0, 0, 4, 0, 5, 2],
+        [6, 0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 0, 5, 0, 2, 0, 0, 3, 0],
+        [0, 0, 0, 8, 0, 0, 7, 0, 0],
+        [2, 0, 3, 0, 4, 0, 0, 9, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [5, 0, 1, 0, 0, 7, 9, 0, 0],
+        [0, 6, 0, 0, 5, 0, 0, 0, 0],
+        [0, 4, 0, 0, 0, 0, 0, 1, 0],
+    ]);
+    let solution = solver.solve(Some(initial)).unwrap();
+    println!("{}", Sudoku::from_collapse(solution));
 }

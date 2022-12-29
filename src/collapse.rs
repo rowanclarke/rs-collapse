@@ -1,16 +1,21 @@
 use super::AccumulateFilter;
 use std::collections::BTreeMap;
 use std::rc::Rc;
-/*
-pub trait FromCollapse {
-    type FromCol: for<'a> Collapse + 'a;
 
-    fn from_collapse(collapse: &Self::FromCol) -> Self;
-}*/
+pub trait FromCollapse {
+    type Collapser: Collapse;
+
+    fn from_collapse(
+        solution: Vec<(
+            <Self::Collapser as Collapse>::Coordinate,
+            <Self::Collapser as Collapse>::Item,
+        )>,
+    ) -> Self;
+}
 
 pub trait Collapse {
     type Item: Clone;
-    type Coordinate: Ord + Clone;
+    type Coordinate: Ord + Clone + PartialEq;
     type State: Iterator<Item = Self::Item> + Clone;
     type Space: Iterator<Item = Self::Coordinate> + Clone;
 
@@ -27,9 +32,14 @@ pub trait Collapse {
     fn get_coords(&self) -> Self::Space;
     fn get_initial(&self) -> BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>;
 
-    fn solve(&mut self) -> Result<Vec<(Self::Coordinate, Self::Item)>, NoSolution> {
+    fn add_restriction(&self) {}
+
+    fn solve(
+        &mut self,
+        initial: Option<BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>>,
+    ) -> Result<Vec<(Self::Coordinate, Self::Item)>, NoSolution> {
         let coords = self.get_coords();
-        let state = self.get_initial();
+        let state = initial.unwrap_or_else(|| self.get_initial());
         self.try_state(coords, state)
     }
 
@@ -59,10 +69,12 @@ pub trait Collapse {
         item: Self::Item,
         state: &mut BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>,
     ) {
-        let mut updater = self.update(coord, item);
+        let mut updater = self.update(coord.clone(), item);
         while let Some((coords, filter)) = updater.next() {
             let filter = Rc::new(filter);
-            coords.for_each(|coord| state.get_mut(&coord).unwrap().add(Rc::clone(&filter)));
+            coords
+                .filter(|c| c != &coord)
+                .for_each(|coord| state.get_mut(&coord).unwrap().add(Rc::clone(&filter)));
         }
     }
 }

@@ -1,9 +1,15 @@
-use super::{AccumulateFilter, Collapse};
+use super::{
+    collapse::{Collapse, FromCollapse},
+    iter::AccumulateFilter,
+};
 use itertools::{Itertools, Product};
-use std::collections::BTreeMap;
-use std::iter::{repeat, zip};
-use std::ops::Range;
-use std::rc::Rc;
+use std::{
+    collections::BTreeMap,
+    fmt::{self, Display, Formatter},
+    iter::{repeat, zip},
+    ops::Range,
+    rc::Rc,
+};
 
 pub struct Solver {
     grid: Grid,
@@ -14,15 +20,33 @@ impl Solver {
         let grid = Grid::new(9, 9);
         Self { grid }
     }
+
+    pub fn get_state(
+        &self,
+        state: [[<Self as Collapse>::Item; 9]; 9],
+    ) -> BTreeMap<<Self as Collapse>::Coordinate, AccumulateFilter<<Self as Collapse>::State>> {
+        let mut sudoku = self.get_initial();
+        for coord in self.grid.clone().into_iter() {
+            let item = state[coord.0][coord.1];
+            if item != 0 {
+                sudoku
+                    .get_mut(&coord)
+                    .unwrap()
+                    .add(Rc::new(move |i| i == item));
+                self.apply_update(coord, item, &mut sudoku);
+            }
+        }
+        sudoku
+    }
 }
 
 impl Collapse for Solver {
-    type Item = u32;
+    type Item = u8;
     type Coordinate = (usize, usize);
     type State = <Range<Self::Item> as IntoIterator>::IntoIter;
     type Space = <Grid as IntoIterator>::IntoIter;
 
-    fn update<'a>(
+    fn update(
         &self,
         coord: Self::Coordinate,
         item: Self::Item,
@@ -92,16 +116,36 @@ impl IntoIterator for Grid {
         (0..self.0).cartesian_product(0..self.1)
     }
 }
-/*
-struct Sudoku {
-    sudoku: [Unit; 81],
+
+pub struct Sudoku {
+    sudoku: [[u8; 9]; 9],
 }
 
 impl FromCollapse for Sudoku {
-    type FromCol = Solver;
+    type Collapser = Solver;
 
-    fn from_collapse(collapse: &Self::FromCol) -> Self {
-        unimplemented!()
+    fn from_collapse(
+        solution: Vec<(
+            <Self::Collapser as Collapse>::Coordinate,
+            <Self::Collapser as Collapse>::Item,
+        )>,
+    ) -> Self {
+        let mut sudoku = [[0; 9]; 9];
+        solution
+            .into_iter()
+            .for_each(|(coord, item)| sudoku[coord.0][coord.1] = item);
+        Self { sudoku }
     }
 }
-*/
+
+impl Display for Sudoku {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        for i in 0..9 {
+            for j in 0..9 {
+                write!(f, "{} ", self.sudoku[i][j])?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
