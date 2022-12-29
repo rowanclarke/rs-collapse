@@ -14,7 +14,7 @@ pub trait FromCollapse {
 }
 
 pub trait Collapse {
-    type Item: Clone;
+    type Item: Clone + PartialEq;
     type Coordinate: Ord + Clone + PartialEq;
     type State: Iterator<Item = Self::Item> + Clone;
     type Space: Iterator<Item = Self::Coordinate> + Clone;
@@ -76,6 +76,22 @@ pub trait Collapse {
                 .filter(|c| c != &coord)
                 .for_each(|coord| state.get_mut(&coord).unwrap().add(Rc::clone(&filter)));
         }
+    }
+
+    fn apply_single(
+        &self,
+        coord: Self::Coordinate,
+        item: Self::Item,
+        state: &mut BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>,
+    ) where
+        Self::Item: 'static,
+    {
+        let ic = item.clone();
+        state
+            .get_mut(&coord)
+            .unwrap()
+            .add(Rc::new(move |i| i == ic));
+        self.apply_update(coord, item, state);
     }
 }
 

@@ -29,11 +29,7 @@ impl Solver {
         for coord in self.grid.clone().into_iter() {
             let item = state[coord.0][coord.1];
             if item != 0 {
-                sudoku
-                    .get_mut(&coord)
-                    .unwrap()
-                    .add(Rc::new(move |i| i == item));
-                self.apply_update(coord, item, &mut sudoku);
+                self.apply_single(coord, item, &mut sudoku);
             }
         }
         sudoku
