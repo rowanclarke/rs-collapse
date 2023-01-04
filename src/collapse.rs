@@ -1,4 +1,4 @@
-use super::AccumulateFilter;
+use super::iter::AccumulateFilter;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -14,7 +14,7 @@ pub trait FromCollapse {
 }
 
 pub trait Collapse {
-    type Item: Clone + PartialEq;
+    type Item: Clone;
     type Coordinate: Ord + Clone + PartialEq;
     type State: Iterator<Item = Self::Item> + Clone;
     type Space: Iterator<Item = Self::Coordinate> + Clone;
@@ -31,8 +31,6 @@ pub trait Collapse {
     >;
     fn get_coords(&self) -> Self::Space;
     fn get_initial(&self) -> BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>;
-
-    fn add_restriction(&self) {}
 
     fn solve(
         &mut self,
@@ -84,7 +82,7 @@ pub trait Collapse {
         item: Self::Item,
         state: &mut BTreeMap<Self::Coordinate, AccumulateFilter<Self::State>>,
     ) where
-        Self::Item: 'static,
+        Self::Item: PartialEq + 'static,
     {
         let ic = item.clone();
         state
