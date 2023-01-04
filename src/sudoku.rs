@@ -1,12 +1,11 @@
 use super::{
     collapse::{Collapse, FromCollapse},
+    grid::Grid,
     iter::AccumulateFilter,
 };
-use itertools::{Itertools, Product};
 use std::{
     collections::BTreeMap,
     fmt::{self, Display, Formatter},
-    iter::{repeat, zip},
     ops::Range,
     rc::Rc,
 };
@@ -77,42 +76,6 @@ impl Collapse for Solver {
     }
 }
 
-#[derive(Clone)]
-pub struct Grid(usize, usize);
-
-impl Grid {
-    fn new(x: usize, y: usize) -> Self {
-        Self(x, y)
-    }
-
-    fn row(&self, x: usize) -> impl Iterator<Item = (usize, usize)> {
-        zip(repeat(x), 0..9)
-    }
-
-    fn column(&self, y: usize) -> impl Iterator<Item = (usize, usize)> {
-        zip(0..9, repeat(y))
-    }
-
-    fn block(
-        &self,
-        (x, y): (usize, usize),
-        (w, h): (usize, usize),
-    ) -> impl Iterator<Item = (usize, usize)> {
-        let (l, t) = (w * (x / w), w * (y / h));
-        let (r, b) = (l + w, t + h);
-        (l..r).cartesian_product(t..b)
-    }
-}
-
-impl IntoIterator for Grid {
-    type Item = (usize, usize);
-    type IntoIter = Product<Range<usize>, Range<usize>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        (0..self.0).cartesian_product(0..self.1)
-    }
-}
-
 pub struct Sudoku {
     sudoku: [[u8; 9]; 9],
 }
@@ -138,10 +101,49 @@ impl Display for Sudoku {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         for i in 0..9 {
             for j in 0..9 {
-                write!(f, "{} ", self.sudoku[i][j])?;
+                write!(f, "{}", self.sudoku[i][j])?;
+                if j != 8 {
+                    write!(f, " ")?;
+                }
             }
-            writeln!(f)?;
+            if i != 8 {
+                writeln!(f)?;
+            }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Collapse, FromCollapse, Solver, Sudoku};
+
+    #[test]
+    fn solve() {
+        let mut solver = Solver::new();
+        let initial = solver.get_state([
+            [0, 0, 0, 0, 0, 4, 0, 5, 2],
+            [6, 0, 0, 0, 0, 0, 0, 0, 0],
+            [9, 0, 5, 0, 2, 0, 0, 3, 0],
+            [0, 0, 0, 8, 0, 0, 7, 0, 0],
+            [2, 0, 3, 0, 4, 0, 0, 9, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [5, 0, 1, 0, 0, 7, 9, 0, 0],
+            [0, 6, 0, 0, 5, 0, 0, 0, 0],
+            [0, 4, 0, 0, 0, 0, 0, 1, 0],
+        ]);
+        let solution = solver.solve(Some(initial)).unwrap();
+        assert_eq!(
+            format!("{}", Sudoku::from_collapse(solution)),
+            r"1 3 8 9 7 4 6 5 2
+6 2 4 1 3 5 8 7 9
+9 7 5 6 2 8 4 3 1
+4 9 6 8 1 3 7 2 5
+2 5 3 7 4 6 1 9 8
+8 1 7 5 9 2 3 6 4
+5 8 1 2 6 7 9 4 3
+3 6 9 4 5 1 2 8 7
+7 4 2 3 8 9 5 1 6"
+        );
     }
 }
