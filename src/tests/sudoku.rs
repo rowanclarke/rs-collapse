@@ -1,8 +1,8 @@
-use super::{
+use super::super::{
     collapse::{Collapse, FromCollapse},
-    grid::Grid,
     iter::AccumulateFilter,
 };
+use super::grid::Grid;
 use std::{
     collections::BTreeMap,
     fmt::{self, Display, Formatter},
@@ -10,7 +10,37 @@ use std::{
     rc::Rc,
 };
 
-pub struct Solver {
+#[test]
+fn solve() {
+    let mut solver = Solver::new();
+    let initial = solver.get_state([
+        [0, 0, 0, 0, 0, 4, 0, 5, 2],
+        [6, 0, 0, 0, 0, 0, 0, 0, 0],
+        [9, 0, 5, 0, 2, 0, 0, 3, 0],
+        [0, 0, 0, 8, 0, 0, 7, 0, 0],
+        [2, 0, 3, 0, 4, 0, 0, 9, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [5, 0, 1, 0, 0, 7, 9, 0, 0],
+        [0, 6, 0, 0, 5, 0, 0, 0, 0],
+        [0, 4, 0, 0, 0, 0, 0, 1, 0],
+    ]);
+    let solution = solver.solve(Some(initial)).unwrap();
+    assert_eq!(
+        format!("\n{}", Sudoku::from_collapse(solution)),
+        r"
+1 3 8 9 7 4 6 5 2
+6 2 4 1 3 5 8 7 9
+9 7 5 6 2 8 4 3 1
+4 9 6 8 1 3 7 2 5
+2 5 3 7 4 6 1 9 8
+8 1 7 5 9 2 3 6 4
+5 8 1 2 6 7 9 4 3
+3 6 9 4 5 1 2 8 7
+7 4 2 3 8 9 5 1 6"
+    );
+}
+
+struct Solver {
     grid: Grid,
 }
 
@@ -76,7 +106,7 @@ impl Collapse for Solver {
     }
 }
 
-pub struct Sudoku {
+struct Sudoku {
     sudoku: [[u8; 9]; 9],
 }
 
@@ -111,39 +141,5 @@ impl Display for Sudoku {
             }
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Collapse, FromCollapse, Solver, Sudoku};
-
-    #[test]
-    fn solve() {
-        let mut solver = Solver::new();
-        let initial = solver.get_state([
-            [0, 0, 0, 0, 0, 4, 0, 5, 2],
-            [6, 0, 0, 0, 0, 0, 0, 0, 0],
-            [9, 0, 5, 0, 2, 0, 0, 3, 0],
-            [0, 0, 0, 8, 0, 0, 7, 0, 0],
-            [2, 0, 3, 0, 4, 0, 0, 9, 0],
-            [0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [5, 0, 1, 0, 0, 7, 9, 0, 0],
-            [0, 6, 0, 0, 5, 0, 0, 0, 0],
-            [0, 4, 0, 0, 0, 0, 0, 1, 0],
-        ]);
-        let solution = solver.solve(Some(initial)).unwrap();
-        assert_eq!(
-            format!("{}", Sudoku::from_collapse(solution)),
-            r"1 3 8 9 7 4 6 5 2
-6 2 4 1 3 5 8 7 9
-9 7 5 6 2 8 4 3 1
-4 9 6 8 1 3 7 2 5
-2 5 3 7 4 6 1 9 8
-8 1 7 5 9 2 3 6 4
-5 8 1 2 6 7 9 4 3
-3 6 9 4 5 1 2 8 7
-7 4 2 3 8 9 5 1 6"
-        );
     }
 }

@@ -1,6 +1,6 @@
 use itertools::{Itertools, Product};
 use std::{
-    iter::{empty, once, repeat, zip},
+    iter::{repeat, zip},
     ops::Range,
 };
 

@@ -5,7 +5,6 @@
 )]
 
 mod collapse;
-mod grid;
 mod iter;
-mod puzzle;
-mod sudoku;
+#[cfg(test)]
+mod tests;

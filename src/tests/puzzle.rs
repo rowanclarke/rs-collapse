@@ -1,8 +1,8 @@
-use super::{
+use super::super::{
     collapse::{Collapse, FromCollapse},
-    grid::Grid,
     iter::AccumulateFilter,
 };
+use super::grid::Grid;
 use itertools::{Itertools, Product};
 use std::{
     collections::BTreeMap,
@@ -11,7 +11,36 @@ use std::{
     rc::Rc,
 };
 
-pub struct Solver {
+#[test]
+fn solve() {
+    let mut solver = Solver::new();
+    let solution = solver.solve(None).unwrap();
+    assert_eq!(
+        format!("\n{}", Puzzle::from_collapse(solution)),
+        r"
+ PW   TP   WT   RT 
+R       W W  P P  T
+   R R  W W  W W  P
+ WP   TR   PT   RW 
+
+ WP   TR   PT   RW 
+W  T T  W W  R R  W
+R  P P  T T  W W  P
+ R    WR   TR   WT 
+
+ R    WR   TR   WT 
+P  W W  R R  W W   
+W  P P  T T  T T  T
+ PR   PT    W   T  
+
+ PR   PT    W   T  
+R  T T  W W  W W  R
+T  W W  R R  R R  W
+ PW   PR   WP   TP "
+    );
+}
+
+struct Solver {
     grid: Grid,
 }
 
@@ -76,7 +105,7 @@ impl Collapse for Solver {
 }
 
 #[derive(Clone)]
-pub struct Board(Product<Range<usize>, Range<usize>>);
+struct Board(Product<Range<usize>, Range<usize>>);
 
 impl Iterator for Board {
     type Item = Piece;
@@ -86,7 +115,7 @@ impl Iterator for Board {
     }
 }
 
-pub struct Puzzle {
+struct Puzzle {
     puzzle: [[Piece; 4]; 4],
 }
 
@@ -130,7 +159,7 @@ impl Display for Puzzle {
 }
 
 #[derive(Clone, Copy)]
-pub struct Piece(usize, usize);
+struct Piece(usize, usize);
 
 impl Piece {
     fn get_line(&self, i: usize) -> String {
@@ -147,39 +176,6 @@ impl Piece {
         } else {
             format!(" {}{} ", sides[2].1, sides[2].0)
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Collapse, FromCollapse, Puzzle, Solver};
-
-    #[test]
-    fn solve() {
-        let mut solver = Solver::new();
-        let solution = solver.solve(None).unwrap();
-        assert_eq!(
-            format!("{}", Puzzle::from_collapse(solution)),
-            r" PW   TP   WT   RT 
-R       W W  P P  T
-   R R  W W  W W  P
- WP   TR   PT   RW 
-
- WP   TR   PT   RW 
-W  T T  W W  R R  W
-R  P P  T T  W W  P
- R    WR   TR   WT 
-
- R    WR   TR   WT 
-P  W W  R R  W W   
-W  P P  T T  T T  T
- PR   PT    W   T  
-
- PR   PT    W   T  
-R  T T  W W  W W  R
-T  W W  R R  R R  W
- PW   PR   WP   TP "
-        );
     }
 }
 
